@@ -1,0 +1,181 @@
+---
+title: "HW 2 Code"
+author: "Samantha Grayson"
+date: "2023-10-31"
+output: html_document
+---
+
+# 1. Load the data
+
+```{r}
+# Load packages
+library(stargazer)
+library(survey)
+library(tidyverse)
+
+# Load data
+data <- read.csv("~/Documents/GitHub/Research-Methods-II/HW 2/vaping-ban-panel.csv")
+```
+
+# 2. Use a regression to evaluate the "parallel trends" requirement of a difference-in-difference ("DnD") estimate.
+
+
+```{r}
+# Data clean-up
+
+data <- data %>% 
+  group_by(State.Id) %>% 
+  mutate(Vaping.Ban = as.numeric(Vaping.Ban)) %>% 
+  mutate(temp = sum(Vaping.Ban)) %>% 
+  mutate(treatment = ifelse(temp >0, 1, 0)) %>% 
+  ungroup() %>% 
+  select(-temp) %>% 
+  mutate(treatment = as.factor(treatment))%>% 
+  mutate(State.Id = as.factor(State.Id))
+
+# Make a pre/post variable
+
+data <- data %>% 
+  mutate(post = ifelse(Year < 2021, 0, 1)) %>% 
+  mutate(post = as.factor(post))
+
+## NOTE: If post = 0, that means it is pre-treatment
+
+```
+
+
+```{r}
+# Limit dataset to all pre-treatment observations
+data_regression1 <- data %>% 
+  filter(post == 0)
+
+# Compare pres of treatment versus non-treatments
+model1 <- lm(Lung.Hospitalizations ~ treatment + Year + treatment * Year, data = data_regression1)
+
+summary(model1)
+
+# Is the interaction significant? 
+
+```
+The interaction between treatment and year pre-2021 is not significant, so we can say that the parallel trend requirement has been satisfied. 
+
+
+# 3. Create the canonical DnD line graph. 
+
+```{r}
+
+ggplot(data = data,
+       mapping = aes(x = Year,
+                     y = Lung.Hospitalizations,
+                     color = treatment)) +
+  geom_line()+
+  geom_vline(xintercept = 2021, linetype="dotted", 
+                color = "red", size=1.5)+
+  ylab("Lung Hospitalizations")  + 
+  scale_color_discrete(name = "Vaping Ban Implemented", labels = c("No", "Yes"))
+
+```
+
+This graph shows that pre-treatment, the lines in non-treated (No Vaping Ban) and treated (Vaping Ban) places are similar (parallel line assumption is met). However, after the onset of treatment in 2021, the lines for treated and non-treated places change course. The line for treated places drops, demonstrating that the ban seems to decrease lung hospitalizations. Further testing is required to see if the results are significant. 
+
+
+# 4. Run a regression to estimate the treatment effect of the laws
+
+```{r}
+model2 <- lm(Lung.Hospitalizations ~ post + treatment + post * treatment + State.Id + Year, data = data)
+
+summary(model2)
+```
+
+There is a significant decrease (beta = -4030.46, p < .001) in lung hospitalizations in treated states after the implementation of vaping laws in 2021.
+
+
+# 5. Make regression table outputs
+
+```{r}
+model_results1 <- stargazer(model1, 
+                            title="Regression Table 1", 
+                            type = "html", 
+                            dep.var.labels=c("Lung Hospitalizations"), 
+                            covariate.labels=c("Treatment Applied (1)", 
+                                               "Year", 
+                                               "Treatment (1) x Year")) 
+
+capture.output(model_results1, file = "~/Documents/GitHub/Research-Methods-II/HW 2/model1.html")
+```
+
+
+```{r}
+model_results2 <- stargazer(model2, 
+                            title="Regression Table 2", 
+                            type = "html",
+                            dep.var.labels=c("Lung Hospitalizations"),
+                            covariate.labels=c("Post Treatment (1)",
+                                               "Treatment Applied (1)",
+                                               "State 2",
+                                               "State 3",
+                                               "State 4",
+                                               "State 5",
+                                               "State 6",
+                                               "State 7",
+                                               "State 8",
+                                               "State 9",
+                                               "State 10",
+                                               "State 11",
+                                               "State 12",
+                                               "State 13",
+                                               "State 14",
+                                               "State 15",
+                                               "State 16",
+                                               "State 17",
+                                               "State 18",
+                                               "State 19",
+                                               "State 20",
+                                               "State 21",
+                                               "State 22",
+                                               "State 23",
+                                               "State 24",
+                                               "State 25",
+                                               "State 26",
+                                               "State 27",
+                                               "State 28",
+                                               "State 29",
+                                               "State 30",
+                                               "State 31",
+                                               "State 32",
+                                               "State 33",
+                                               "State 34",
+                                               "State 35",
+                                               "State 36",
+                                               "State 37",
+                                               "State 38",
+                                               "State 39",
+                                               "State 40",
+                                               "State 41",
+                                               "State 42",
+                                               "State 43",
+                                               "State 44",
+                                               "State 45",
+                                               "State 46",
+                                               "State 47",
+                                               "State 48",
+                                               "State 49",
+                                               "State 50",
+                                               "Year",
+                                               "Post Treatment (1) x Treatment Applied (1)"
+                                               )) 
+
+capture.output(model_results2, file = "~/Documents/GitHub/Research-Methods-II/HW 2/model2.html")
+```
+
+
+# Can you reject the hypothesis that state fixed effects are all zero? 
+
+```{r}
+regTermTest(model2,
+            "State.Id",
+            method = c("LRT"),
+            lrt.approximation = "satterthwaite") 
+```
+
+Yes!
