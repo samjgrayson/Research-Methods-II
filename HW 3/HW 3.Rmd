@@ -1,0 +1,193 @@
+---
+title: "HW 3"
+author: "Samantha Grayson"
+date: "2023-11-07"
+output: html_document
+---
+
+# Load libraries
+
+```{r}
+library(WeightIt)
+library(cobalt)
+library(stargazer)
+library(kableExtra)
+library(tidyverse)
+```
+
+
+# 1: Import data
+
+```{r}
+sports <- read.csv("~/Documents/GitHub/Research-Methods-II/HW 3/sports-and-education.csv")
+```
+
+
+# 2: Balance table
+
+```{r}
+covs <- subset(sports, select = c(Academic.Quality, Athletic.Quality, Near.Big.Market))
+
+sports$p.score <- glm(Ranked.2017 ~ Academic.Quality + Athletic.Quality + Near.Big.Market,
+                       data = sports,
+                       family = "binomial")$fitted.values
+
+sports$att.weights <- with(sports, Ranked.2017 + (1-Ranked.2017)*p.score/(1-p.score))
+
+bal.tab(covs, 
+        treat = sports$Ranked.2017, 
+        weights = sports$att.weights,
+        disp = c("means", "sds"), un = FALSE, 
+        stats = c("mean.diffs", "variance.ratios"),
+        thresholds = c(m = .1))
+
+```
+
+The balance table output indicates that academic quality is unbalanced between ranked and unranked schools. Academic quality is the only covariate where the standard mean difference is above the 0.1 threshold for balance (source: https://cran.r-project.org/web/packages/MatchIt/vignettes/assessing-balance.html). The balance table failed.
+
+
+## Make publication-worthy table for the balance table output
+
+```{r}
+balance.table <- bal.tab(covs, 
+        treat = sports$Ranked.2017, 
+        weights = sports$att.weights,
+        disp = c("means", "sds"), un = FALSE, 
+        stats = c("mean.diffs", "variance.ratios"),
+        thresholds = c(m = .1))
+
+table <- balance.table$Balance
+
+table_output <- table %>% 
+  select(-c(Type, M.0.Un, SD.0.Un, M.1.Un, SD.1.Un, Diff.Un, V.Ratio.Adj, V.Ratio.Un)) %>% 
+  dplyr::rename("Unranked School Adj. Mean" = "M.0.Adj") %>% 
+  dplyr::rename("Unranked School Adj. SD" = "SD.0.Adj") %>% 
+  dplyr::rename("Ranked School Adj. Mean" = "M.1.Adj") %>% 
+  dplyr::rename("Ranked School Adj. SD" = "SD.1.Adj") %>% 
+  dplyr::rename("Mean Difference Adj." = "Diff.Adj") %>% 
+  dplyr::rename("Mean Threshold (.1)" = "M.Threshold") 
+
+rownames(table_output) = c("Academic Quality", "Athletic Quality", "Near a Big Market")
+  
+  
+kable(table_output,
+      format = "html",
+      align = 'c',
+      booktabs = TRUE,
+      digits = c(2, 2, 2, 2, 2, 2),
+      caption = "Balance Table Comparing Ranked and Unranked Schools") %>%
+kable_classic() %>% 
+cat(., file = "~/Documents/GitHub/Research-Methods-II/HW 3/balance_table_output.html")
+
+```
+
+Cool!
+
+# 3: Comment on "propensity score methods are more credible when we (the researchers) are able to use all variables that the agents who assign treatments can use in their assignments."
+
+There may be unobservables that go into whether a school is ranked or not (treated) that we do not have access to in our data. For example, variables like school size, how much budget is allocated to sports, etc. could play a role in whether a school is ranked. On paper, we may have very good matches, but perhaps we have an Ozzy & Prince Charles phenomenon. They are great matches, based on the observables the researchers have access to, but in actuality they are very different. 
+
+
+# 4: Build a propensity score model to predict which colleges were ranked
+
+```{r}
+# First, develop a simple model of who is ranked. Feel free to use linear or logistic regression. Output the coefficients of this model, so that you can show which factors predict (and which don't).
+
+logistic_model <- glm(Ranked.2017 ~ Academic.Quality + Athletic.Quality + as.factor(Near.Big.Market),
+                       data = sports,
+                       family = "binomial")
+
+summary(logistic_model)
+```
+
+Athletic quality and near big markets are significant predictors of whether a school is ranked or not. 
+
+```{r}
+# For each observation, predict the probability of treatment.
+
+sports$p.score <- glm(Ranked.2017 ~ Academic.Quality + Athletic.Quality + Near.Big.Market,
+                       data = sports,
+                       family = "binomial")$fitted.values
+
+```
+
+We take the fitted values and create a new column with the p.scores for each observation. 
+
+
+## Make publication-worthy table 
+
+```{r}
+model_results1 <- stargazer(logistic_model, 
+                            title="Alumni Donations, Blocks, and Covariates Table", 
+                            type = "html", 
+                            dep.var.labels=c("Ranked in 2017"), 
+                            covariate.labels=c("Academic Quality",
+                                               "Athletic Quality",
+                                               "Near a Big Market (1)")) 
+
+capture.output(model_results1, file = "~/Documents/GitHub/Research-Methods-II/HW 3/logistic_model.html")
+```
+
+
+
+# 5: Use stacked histograms to show overlap in the between ranked and unranked schools.
+
+```{r}
+W.out <- WeightIt::weightit(Ranked.2017 ~ Academic.Quality + Athletic.Quality + Near.Big.Market,
+                            data = sports,
+                            method = "glm",
+                            estimand = "ATT")
+
+
+Plot <- bal.plot(W.out, var.name = "prop.score",
+         which = "both",
+         type = "histogram",
+         mirror = TRUE)
+
+Plot + 
+  scale_fill_discrete(name = "Treatment", labels = c("Non-Treated", "Treated"))+
+  geom_vline(xintercept = 0.17, linetype="dotted", 
+                color = "navy", size=1.5)+
+  geom_vline(xintercept = 0.845, linetype="dotted", 
+                color = "navy", size=1.5)
+```
+
+
+# 6: Group your observations into 'blocks' based on propensity score.
+
+```{r}
+sports_sorted <- sports %>% 
+  arrange(p.score) %>% 
+  mutate(row.id = row_number()) %>% 
+  mutate(block = ceiling(row.id/4)) %>% 
+  select(-row.id)
+```
+
+The p.scores are not blocked in groups of 4 in ascending order. Need to make them into factors for the model, but will suppress their output, because that's annoying. 
+
+
+# 7: Analyze the treatment effect of being ranked on alumni donations, while controlling for block-fixed effects as well as other covariates.
+
+```{r}
+model <- lm(Alumni.Donations.2018 ~ as.factor(Ranked.2017) + as.factor(block) + Academic.Quality + Athletic.Quality + as.factor(Near.Big.Market), data = sports_sorted)
+
+summary(model)
+```
+
+
+## Make publication-worthy table 
+
+```{r}
+model_results1 <- stargazer(model, 
+                            title="Alumni Donations, Blocks, and Covariates Table", 
+                            type = "html", 
+                            omit="block",
+                            dep.var.labels=c("Alumni Donations"), 
+                            covariate.labels=c("Ranked in 2017 (1)",
+                                               "Academic Quality",
+                                               "Athletic Quality",
+                                               "Near a Big Market (1)")) 
+
+capture.output(model_results1, file = "~/Documents/GitHub/Research-Methods-II/HW 3/model.html")
+```
+
