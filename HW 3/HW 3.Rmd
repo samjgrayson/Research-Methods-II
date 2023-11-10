@@ -43,7 +43,7 @@ bal.tab(covs,
 
 ```
 
-The balance table output indicates that academic quality is unbalanced between ranked and unranked schools. Academic quality is the only covariate where the standard mean difference is above the 0.1 threshold for balance (source: https://cran.r-project.org/web/packages/MatchIt/vignettes/assessing-balance.html). The balance table failed.
+The balance table output indicates that academic quality is unbalanced between ranked and unranked schools. Academic quality is the only covariate where the standard mean difference is above the 0.1 threshold for balance (source: https://cran.r-project.org/web/packages/MatchIt/vignettes/assessing-balance.html). The mean differences are standardized using the col_w_smd() function, which computes the weighted mean differences for binary treatment. Given this information, the balance table failed.
 
 
 ## Make publication-worthy table for the balance table output
@@ -81,11 +81,11 @@ cat(., file = "~/Documents/GitHub/Research-Methods-II/HW 3/balance_table_output.
 
 ```
 
-Cool!
+Cool! We have a table output!
 
 # 3: Comment on "propensity score methods are more credible when we (the researchers) are able to use all variables that the agents who assign treatments can use in their assignments."
 
-There may be unobservables that go into whether a school is ranked or not (treated) that we do not have access to in our data. For example, variables like school size, how much budget is allocated to sports, etc. could play a role in whether a school is ranked. On paper, we may have very good matches, but perhaps we have an Ozzy & Prince Charles phenomenon. They are great matches, based on the observables the researchers have access to, but in actuality they are very different. 
+There may be unobservables that go into whether a school is ranked (treated) or not that we do not have access to in our dataset. For example, variables like school size, how much budget is allocated to sports, etc. could play a role in whether a given school is ranked. On paper, we may have very good matches, but perhaps we have an Ozzy Osbourne & Prince Charles phenomenon: there are great matches, based on the observables the researchers have access to, but in actuality the matches may be very different. 
 
 
 # 4: Build a propensity score model to predict which colleges were ranked
@@ -100,7 +100,7 @@ logistic_model <- glm(Ranked.2017 ~ Academic.Quality + Athletic.Quality + as.fac
 summary(logistic_model)
 ```
 
-Athletic quality and near big markets are significant predictors of whether a school is ranked or not. 
+The logistic regression table output indicates that athletic quality and near big markets are significant predictors of whether a school is ranked or not.
 
 ```{r}
 # For each observation, predict the probability of treatment.
@@ -138,7 +138,7 @@ W.out <- WeightIt::weightit(Ranked.2017 ~ Academic.Quality + Athletic.Quality + 
                             method = "glm",
                             estimand = "ATT")
 
-
+# Plot 1
 Plot <- bal.plot(W.out, var.name = "prop.score",
          which = "both",
          type = "histogram",
@@ -151,6 +151,7 @@ Plot +
   geom_vline(xintercept = 0.845, linetype="dotted", 
                 color = "navy", size=1.5)
 
+# Plot 2
 Plot2 <- bal.plot(W.out, "prop.score", which = "both")
 
 Plot2 + 
@@ -160,6 +161,8 @@ Plot2 +
   geom_vline(xintercept = 0.78, linetype="dotted", 
                 color = "navy", size=1.5)
 ```
+
+Both plots show (in slightly different ways) that the area of overlap between non-treated (unranked) and treated (ranked) schools is approximately between p.score = 0.2 and p.score = 0.8. Values on the far right (p.score > 0.8) and far left (p.score <0.2) do not overlap. We did not address how to drop these observations in class.  
 
 
 # 6: Group your observations into 'blocks' based on propensity score.
@@ -172,7 +175,7 @@ sports_sorted <- sports %>%
   select(-row.id)
 ```
 
-The p.scores are not blocked in groups of 4 in ascending order. Need to make them into factors for the model, but will suppress their output, because that's annoying. 
+The p.scores are blocked in groups of 4 in ascending order. Need to make them into factors for the model, but will suppress them in the publication-quality table, because that's annoying to look at. 
 
 
 # 7: Analyze the treatment effect of being ranked on alumni donations, while controlling for block-fixed effects as well as other covariates.
@@ -182,6 +185,8 @@ model <- lm(Alumni.Donations.2018 ~ as.factor(Ranked.2017) + as.factor(block) + 
 
 summary(model)
 ```
+
+The regression table output indicates that whether a school is ranked in 2017, academic quality, athletic quality, and whether a school is near big markets are significant predictors of alumni donations in 2018. I included block-fixed effects in the model, but did not output their coefficients because they were not significant. In other words, controlling for block, academic quality, athletic quality, and near a big market, schools that were ranked (treated) in 2017 received over $500,000 more on average in alumni donations in 2018 than unranked schools (untreated). 
 
 
 ## Make publication-worthy table 
