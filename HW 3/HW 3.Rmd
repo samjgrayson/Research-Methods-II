@@ -181,12 +181,12 @@ The p.scores are blocked in groups of 4 in ascending order. Need to make them in
 # 7: Analyze the treatment effect of being ranked on alumni donations, while controlling for block-fixed effects as well as other covariates.
 
 ```{r}
-model <- lm(Alumni.Donations.2018 ~ as.factor(Ranked.2017) + as.factor(block) + Academic.Quality + Athletic.Quality + as.factor(Near.Big.Market), data = sports_sorted)
+model <- lm(Alumni.Donations.2018 ~ as.factor(Ranked.2017) + p.score + Academic.Quality + Athletic.Quality + as.factor(Near.Big.Market) + as.factor(block), data = sports_sorted)
 
 summary(model)
 ```
 
-The regression table output indicates that whether a school is ranked in 2017, academic quality, athletic quality, and whether a school is near big markets are significant predictors of alumni donations in 2018. I included block-fixed effects in the model, but did not output their coefficients because they were not significant. In other words, controlling for block, academic quality, athletic quality, and near a big market, schools that were ranked (treated) in 2017 received over $500,000 more on average in alumni donations in 2018 than unranked schools (untreated). 
+The regression table output indicates that whether a school is ranked in 2017, p.score, academic quality, and whether a school is near big markets are significant predictors of alumni donations in 2018. Additionally, some block factors (for those with higher propensity scores) are significantly different from the reference category of block (1). In other words, controlling for block, p.score, academic quality, athletic quality, and near a big market, schools that were ranked (treated) in 2017 received over $500,000 more on average in alumni donations in 2018 than unranked schools (untreated). 
 
 
 ## Make publication-worthy table 
@@ -194,13 +194,37 @@ The regression table output indicates that whether a school is ranked in 2017, a
 ```{r}
 model_results1 <- stargazer(model, 
                             title="Alumni Donations, Blocks, and Covariates Table", 
-                            type = "html", 
-                            omit="block",
+                            type = "html",
                             dep.var.labels=c("Alumni Donations"), 
                             covariate.labels=c("Ranked in 2017 (1)",
+                                               "P-score",
                                                "Academic Quality",
                                                "Athletic Quality",
-                                               "Near a Big Market (1)")) 
+                                               "Near a Big Market (1)",
+                                               "Block 2",
+                                               "Block 3",
+                                               "Block 4",
+                                               "Block 5",
+                                               "Block 6",
+                                               "Block 7",
+                                               "Block 8",
+                                               "Block 9",
+                                               "Block 10",
+                                               "Block 11",
+                                               "Block 12",
+                                               "Block 13",
+                                               "Block 14",
+                                               "Block 15",
+                                               "Block 16",
+                                               "Block 17",
+                                               "Block 18",
+                                               "Block 19",
+                                               "Block 20",
+                                               "Block 21",
+                                               "Block 22",
+                                               "Block 23",
+                                               "Block 24",
+                                               "Block 25")) 
 
 capture.output(model_results1, file = "~/Documents/GitHub/Research-Methods-II/HW 3/model.html")
 ```
