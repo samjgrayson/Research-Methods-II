@@ -1,0 +1,169 @@
+---
+title: "HW 4"
+author: "Samantha Grayson"
+date: "2023-11-14"
+output: html_document
+---
+
+# Load libraries
+
+```{r}
+library(cobalt)
+library(kableExtra)
+library(tidyverse)
+```
+
+# Import data
+
+```{r}
+crime <- read.csv("~/Documents/GitHub/Research-Methods-II/HW 4/crime-iv.csv")
+```
+
+
+# 1. What implicit claim about causality does Obama's "cycle of crime" theory assert? 
+
+Obama has coined the term "cycle of crime to describe the phenomenon that harsh sentencing creates more criminals, which reduces the benefits of convictions and criminal sentences. The implicit claim about causality that this makes is that the longer someone is in jail, the more likely it is that they will go back to jail. 
+
+# 2. Your friend's proposed research design is: Run a regression whose outcome is recidivism and whose main explanatory variable is the length of the prison sentence. React your friend's research design. 
+
+This regression would tell us if there's a correlation between length of the prison sentence and recidivism. However, this does not allow us to make a causal claim. That is what instrumental variables should allow us to do. 
+
+
+# 3. Develop a separate research design
+
+Use Instrumental variable design where: 
+
+IV: Judge's political affiliation
+Treatment: Length of prison stay
+Outcome: Return to jail
+
+
+# 4. Perform a balance test. Does the judge's party really seem to be randomly assigned? 
+
+```{r}
+covs <- subset(crime, select = c(Severity.Of.Crime))
+
+crime$p.score <- glm(Republican.Judge ~ Severity.Of.Crime,
+                     data = crime,
+                     family = "binomial")$fitted.values
+
+crime$att.weights <- with(crime, Republican.Judge + (1-Republican.Judge)*p.score/(1-p.score))
+
+bal.tab(covs, 
+        treat = crime$Republican.Judge, 
+        weights = crime$att.weights,
+        disp = c("means", "sds"), un = TRUE, 
+        stats = c("mean.diffs", "variance.ratios"),
+        thresholds = c(m = .1))
+```
+
+The output of the balance table tells us that severity of crimes are randomly assigned to judge. 
+
+
+## Make publication-worthy table for the balance table output
+
+```{r}
+balance.table <- bal.tab(covs, 
+        treat = crime$Republican.Judge, 
+        weights = crime$att.weights,
+        disp = c("means", "sds"), un = TRUE,
+        stats = c("mean.diffs", "variance.ratios"),
+        thresholds = c(m = .1))
+
+table <- balance.table$Balance
+
+table_output <- table %>% 
+  select(c(M.0.Un, SD.0.Un, M.1.Un, SD.1.Un, Diff.Un, M.Threshold)) %>% 
+  dplyr::rename("Democrat Judge Unadj. Mean" = "M.0.Un") %>% 
+  dplyr::rename("Democrat Judge Unadj. SD" = "SD.0.Un") %>% 
+  dplyr::rename("Republican Judge Unadj. Mean" = "M.1.Un") %>% 
+  dplyr::rename("Republican Judge Unadj. SD" = "SD.1.Un") %>% 
+  dplyr::rename("Mean Difference Unadj." = "Diff.Un") %>% 
+  dplyr::rename("Mean Threshold (.1)" = "M.Threshold") 
+
+rownames(table_output) = c("Severity of Crime")
+  
+  
+kable(table_output,
+      format = "html",
+      align = 'c',
+      booktabs = TRUE,
+      digits = c(2, 2, 2, 2, 2, 2),
+      caption = "Balance Table Comparing Democrat and Republican Judge Cases") %>%
+kable_classic() %>% 
+cat(., file = "~/Documents/GitHub/Research-Methods-II/HW 4/balance_table_output.html")
+
+```
+
+Cool! We have a table output!
+
+
+# 5. Describe in words the ``first stage'' of the IV design. Then, create a publication-quality table for the first stage only. 
+
+Stage 1 is regressing compliance on nudge. For this design, compliance is time in jail (there are not really non-compliers) and nudge is whether the judge is democrat or republican. I will also control for severity of crime in the model.
+
+```{r}
+model1 <- lm(Months.In.Jail ~ Republican.Judge + Severity.Of.Crime,
+             data = crime)
+
+summary(model1)
+```
+
+
+## Make publication-worthy table 
+
+```{r}
+model_results1 <- stargazer(model1, 
+                            title="First Stage", 
+                            type = "html", 
+                            dep.var.labels=c("Months in Jail"), 
+                            covariate.labels=c("Republican Judge (1)",
+                                               "Severity of Crime")) 
+
+capture.output(model_results1, file = "~/Documents/GitHub/Research-Methods-II/HW 4/model1.html")
+```
+
+
+# 6. Interpret the coeffocoent on your instrument from the first stage
+
+Net of severity of the crime, when someone is assigned to a Republican judge, then they will spend 3.2219 more months in jail than someone assigned to a Democrat judge, on average.
+
+
+# 7. Calculate the "reduced form." 
+
+```{r}
+model2 <- lm(Recidivates ~ Republican.Judge + Severity.Of.Crime,
+             data = crime)
+
+summary(model2)
+```
+
+
+## Make publication-worthy table 
+
+```{r}
+model_results2 <- stargazer(model2, 
+                            title="Reduced Form", 
+                            type = "html", 
+                            dep.var.labels=c("Recidivates"), 
+                            covariate.labels=c("Republican Judge (1)",
+                                               "Severity of Crime")) 
+
+capture.output(model_results2, file = "~/Documents/GitHub/Research-Methods-II/HW 4/model2.html")
+```
+
+
+# 8. Calculate the ratio of the reduced form
+
+```{r}
+0.142664 / 3.2219
+```
+
+
+# 9. Now complete the IV regression and make a publication quality table of the second stage. Use the setup below. 
+
+
+
+
+
+
