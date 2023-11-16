@@ -10,6 +10,8 @@ output: html_document
 ```{r}
 library(cobalt)
 library(kableExtra)
+library(stargazer)
+library(ivreg)
 library(tidyverse)
 ```
 
@@ -22,20 +24,20 @@ crime <- read.csv("~/Documents/GitHub/Research-Methods-II/HW 4/crime-iv.csv")
 
 # 1. What implicit claim about causality does Obama's "cycle of crime" theory assert? 
 
-Obama has coined the term "cycle of crime to describe the phenomenon that harsh sentencing creates more criminals, which reduces the benefits of convictions and criminal sentences. The implicit claim about causality that this makes is that the longer someone is in jail, the more likely it is that they will go back to jail. 
+Obama has coined the term "cycle of crime" to describe the phenomenon that harsh sentencing creates more criminals, which reduces the benefits of convictions and criminal sentences. The implicit claim about causality that this statement makes is that the longer someone is in jail (the harsher the sentence), the more likely it is that they will go back to jail. 
 
 # 2. Your friend's proposed research design is: Run a regression whose outcome is recidivism and whose main explanatory variable is the length of the prison sentence. React your friend's research design. 
 
-This regression would tell us if there's a correlation between length of the prison sentence and recidivism. However, this does not allow us to make a causal claim. That is what instrumental variables should allow us to do. 
+This regression would tell us if there's a correlation between the length of the prison sentence and recidivism. It would tell us whether or not there is a significant relationship observed between length of prison stay and whether or not the defendant goes back to jail. However, the proposed model does not allow us to make a causal claim. That is what instrumental variables should allow us to do. 
 
 
 # 3. Develop a separate research design
 
-Use Instrumental variable design where: 
+In learning that defendants are randomly assigned to judge, it appears that we can implement a different research design that would allow us to make a causal claim. We can use an Instrumental variable design where: 
 
-IV: Judge's political affiliation
-Treatment: Length of prison stay
-Outcome: Return to jail
+Instrumental Variable: Judge's political affiliation
+Treatment (Nudge): Length of prison stay
+Outcome: Return to jail (Recidivism)
 
 
 # 4. Perform a balance test. Does the judge's party really seem to be randomly assigned? 
@@ -57,7 +59,7 @@ bal.tab(covs,
         thresholds = c(m = .1))
 ```
 
-The output of the balance table tells us that severity of crimes are randomly assigned to judge. 
+The output of the balance table tells us that severity of crimes are randomly assigned to judge. The mean difference between severity of crime for cases with republican judges and severity of crime for cases with democrat judges is small -- the table is balanced.  
 
 
 ## Make publication-worthy table for the balance table output
@@ -98,9 +100,9 @@ cat(., file = "~/Documents/GitHub/Research-Methods-II/HW 4/balance_table_output.
 Cool! We have a table output!
 
 
-# 5. Describe in words the ``first stage'' of the IV design. Then, create a publication-quality table for the first stage only. 
+# 5. Describe in words the "first stage" of the IV design. Then, create a publication-quality table for the first stage only. 
 
-Stage 1 is regressing compliance on nudge. For this design, compliance is time in jail (there are not really non-compliers) and nudge is whether the judge is democrat or republican. I will also control for severity of crime in the model.
+Stage 1 of the Instrumental Variables design is regressing compliance on nudge. For this design, compliance is time in jail and nudge is whether the judge is democrat or republican. I will also control for severity of crime in the model.
 
 ```{r}
 model1 <- lm(Months.In.Jail ~ Republican.Judge + Severity.Of.Crime,
@@ -120,7 +122,7 @@ model_results1 <- stargazer(model1,
                             covariate.labels=c("Republican Judge (1)",
                                                "Severity of Crime")) 
 
-capture.output(model_results1, file = "~/Documents/GitHub/Research-Methods-II/HW 4/model1.html")
+capture.output(model_results1, file = "~/Documents/GitHub/Research-Methods-II/HW 4/stage1.html")
 ```
 
 
@@ -149,7 +151,7 @@ model_results2 <- stargazer(model2,
                             covariate.labels=c("Republican Judge (1)",
                                                "Severity of Crime")) 
 
-capture.output(model_results2, file = "~/Documents/GitHub/Research-Methods-II/HW 4/model2.html")
+capture.output(model_results2, file = "~/Documents/GitHub/Research-Methods-II/HW 4/reducedform.html")
 ```
 
 
@@ -162,7 +164,33 @@ capture.output(model_results2, file = "~/Documents/GitHub/Research-Methods-II/HW
 
 # 9. Now complete the IV regression and make a publication quality table of the second stage. Use the setup below. 
 
+```{r}
+iv1 = ivreg(Recidivates ~ Months.In.Jail + Severity.Of.Crime | Republican.Judge + Severity.Of.Crime, data = crime)
 
+summary(iv1)
+```
+
+## Make publication-worthy table 
+
+```{r}
+model_results3 <- stargazer(iv1, 
+                            title="IV Regression", 
+                            type = "html", 
+                            dep.var.labels=c("Recidivates"), 
+                            covariate.labels=c("Months in Jail",
+                                               "Severity of Crime")) 
+
+capture.output(model_results3, file = "~/Documents/GitHub/Research-Methods-II/HW 4/IV1.html")
+```
+
+
+# 10. State the F-stat in your writeup. It does not need to go into your table (although, in an actual publication it would). Is it above the conventional threshold? 
+
+The F-statistic from the model is 164.3. The F-statistic is significant (p < .001), meaning it is above the conventional threshold.
+
+# 11. Compare your answer to question #8 (above) to the IV coefficient in #9. 
+
+The coefficients are the same. Both are 0.04428. 
 
 
 
