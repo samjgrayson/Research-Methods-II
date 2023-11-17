@@ -28,14 +28,14 @@ Obama has coined the term "cycle of crime" to describe the phenomenon that harsh
 
 # 2. Your friend's proposed research design is: Run a regression whose outcome is recidivism and whose main explanatory variable is the length of the prison sentence. React your friend's research design. 
 
-This regression would tell us if there's a correlation between the length of the prison sentence and recidivism. It would tell us whether or not there is a significant relationship observed between length of prison stay and whether or not the defendant goes back to jail. However, the proposed model does not allow us to make a causal claim. That is what instrumental variables should allow us to do. 
+This regression would tell us if there's a correlation between the length of the prison sentence and recidivism. It would tell us whether or not there is a significant relationship observed between length of prison stay and whether or not the defendant goes back to jail. However, the proposed model does not allow us to make a causal claim. That is what instrumental variables, with random assignment, should allow us to do. 
 
 
 # 3. Develop a separate research design
 
 In learning that defendants are randomly assigned to judge, it appears that we can implement a different research design that would allow us to make a causal claim. We can use an Instrumental variable design where: 
 
-Instrumental Variable: Judge's political affiliation
+Instrumental Variable: Judge's political affiliation assignment
 Treatment (Nudge): Length of prison stay
 Outcome: Return to jail (Recidivism)
 
@@ -186,11 +186,42 @@ capture.output(model_results3, file = "~/Documents/GitHub/Research-Methods-II/HW
 
 # 10. State the F-stat in your writeup. It does not need to go into your table (although, in an actual publication it would). Is it above the conventional threshold? 
 
-The F-statistic from the model is 164.3. The F-statistic is significant (p < .001), meaning it is above the conventional threshold.
+The Wald test-statistic from the model (R does not output an F-statistic) is 164.3. The statistic is significant (p < .001), and above the threshold we discussed in class of 10. 
 
 # 11. Compare your answer to question #8 (above) to the IV coefficient in #9. 
 
 The coefficients are the same. Both are 0.04428. 
+
+# 12. Complete these sentences.
+
+12a. In the research design above (using randomized judges), the always-takers are the defendants who are always given long prison sentences no matter if they are assigned a democrat or republican judge, holding severity of the crime constant. 
+
+
+12b. The never-takers are the defendants who are always given short prison sentences no matter if they are assigned a democrat or republican judge, holding severity of the crime constant. 
+
+
+12c. The compliers are the defendants who are given long prison sentences only if they are assigned to a republican judge, holding severity of the crime constant.
+
+
+12d. The defiers are the defendants who are given short prison sentences only if they are assigned to a republican judge, holding severity of the crime constant. 
+
+
+# 13. Comment on the monotonicity assumption and the possibility of "defiers" in this setting. 
+
+The monotonicity assumption says that there should not be defiers in the data. To use instrumental variables, the monotonicity assumption should be met. However, I would argue that there is a possibility of defiers in this setting. It is possible that if a defendant were to be assigned to a democrat judge, they would have gotten a longer sentence (or the opposite: if a defendant were to be assigned to a republican judge, they would have gotten a shorter sentence). 
+
+
+# 14. In your dataset, what types of defendants are compliers? 
+
+The compliers are the defendants who were given long sentences when assigned to a republican judge. 
+
+
+# 15. Does the cycle of crime hypothesis appear to be true for the compliers? 
+
+Yes - defendants who are given a longer sentence (when assigned to a republican) are more likely to recidivate (beta coefficient = 0.044, p < .001), controlling for the severity of the crime committed.
+
+
+
 
 
 
