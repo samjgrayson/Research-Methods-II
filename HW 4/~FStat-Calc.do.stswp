@@ -14,4 +14,6 @@ ivreg2 recidivates (monthsinjail = republicanjudge) severityofcrime
 eststo iv
 
 * Output table
-esttab using iv.tex, mtitle("IV") label replace tex
+esttab iv using FStat-Calc.rtf
+
+
