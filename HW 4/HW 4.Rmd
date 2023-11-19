@@ -188,6 +188,11 @@ capture.output(model_results3, file = "~/Documents/GitHub/Research-Methods-II/HW
 
 The Wald test-statistic from the model (R does not output an F-statistic) is 164.3. The statistic is significant (p < .001), and above the threshold we discussed in class of 10. 
 
+I also used Stata to derive the F-statistic (See FStat-Calc.do in the repo). According to the output, F(2, 4997) = 164.34, confirming the output from the model ran in R. The code also outputs a weak identification test (Cragg-Donald Wald F statistic), which is 76.868. 
+
+Both values are above the conventional threshold of 10. 
+
+
 # 11. Compare your answer to question #8 (above) to the IV coefficient in #9. 
 
 The coefficients are the same. Both are 0.04428. 
