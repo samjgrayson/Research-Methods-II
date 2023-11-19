@@ -14,6 +14,7 @@ ivreg2 recidivates (monthsinjail = republicanjudge) severityofcrime
 eststo iv
 
 * Output table
-esttab iv using FStat-Calc.rtf
+global tableoptions "bf(%15.2gc) sfmt(%15.2gc) se label noisily noeqlines nonumbers varlabels(_cons Constant, end("" ) nolast)  starlevels(* 0.1 ** 0.05 *** 0.01) replace r2"
+esttab iv using IV_output.rtf
 
 
